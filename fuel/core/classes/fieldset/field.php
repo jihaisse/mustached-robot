@@ -336,9 +336,10 @@ class Fieldset_Field
 	 *
 	 * @param   string|array  one option value, or multiple value=>label pairs in an array
 	 * @param   string
+	 * @param   bool            Whether or not to replace the current options
 	 * @return  Fieldset_Field  this, to allow chaining
 	 */
-	public function set_options($value, $label = null)
+	public function set_options($value, $label = null, $replace_options = false)
 	{
 		if ( ! is_array($value))
 		{
@@ -361,7 +362,7 @@ class Fieldset_Field
 			}
 		};
 
-		empty($this->options) ? $this->options = $value : $merge($this->options, $value, $merge);
+		($replace_options or empty($this->options)) ? $this->options = $value : $merge($this->options, $value, $merge);
 
 		return $this;
 	}
@@ -531,6 +532,7 @@ class Fieldset_Field
 
 	protected function template($build_field)
 	{
+
 		$form = $this->fieldset()->form();
 
 		$required_mark = $this->get_attribute('required', null) ? $form->get_config('required_mark', null) : null;
@@ -564,7 +566,19 @@ class Fieldset_Field
 			$build_field = implode(' ', $build_field);
 		}
 
-		$template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
+		// Adding a templating extension by field type. Custom extension by @dzey.
+		switch ($this->get_attribute('type', null))
+		{
+			case "checkbox":
+				$template = $form->get_config('field_checkbox_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
+			break;
+			default:
+				$template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
+			break;
+		}
+
+		// $template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
+
 		$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}'),
 			array($label, $required_mark, $build_field, $error_msg, $error_class, $this->description),
 			$template);
